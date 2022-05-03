@@ -1,93 +1,66 @@
-import 'package:flutter/material.dart';
-import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
+import 'dart:math';
 
-import 'package:kadosh/modules/catalogue/entities/catalogue.dart';
+import 'package:fancy_shimmer_image/fancy_shimmer_image.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:kadosh/modules/catalogue/entities/post.dart';
-import 'package:kadosh/modules/catalogue/repositories/json_server.dart';
-import 'package:kadosh/modules/catalogue/repositories/repositories.dart';
+
+class CataloguePageArgs {
+  final Post post;
+  int indexOnFocus;
+
+  CataloguePageArgs(this.post, [this.indexOnFocus = -1]);
+}
 
 class CataloguePage extends StatefulWidget {
   const CataloguePage({Key? key}) : super(key: key);
+
+  static const routeName = '/catalogue';
 
   @override
   State<CataloguePage> createState() => _CataloguePageState();
 }
 
 class _CataloguePageState extends State<CataloguePage> {
-  final int _limit = 2;
-  late final Repository repository;
-  final PagingController<int, Post> _pagingController =
-      PagingController(firstPageKey: 0);
-
-  @override
-  void initState() {
-    repository = JsonServerRepository(_limit);
-    _pagingController.addPageRequestListener((pageKey) {
-      _fetchPage(pageKey);
-    });
-
-    _pagingController.addStatusListener((status) {
-      if (status == PagingStatus.subsequentPageError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Something went wrong while fetching a new page.',
-            ),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () => _pagingController.retryLastFailedRequest(),
-            ),
-          ),
-        );
-      }
-    });
-
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          title: const Text("N.A Kadosh"),
-        ),
-        body: RefreshIndicator(
-          onRefresh: () => Future.sync(
-            () => _pagingController.refresh(),
-          ),
-          child: PagedListView<int, Post>.separated(
-            pagingController: _pagingController,
-            builderDelegate: PagedChildBuilderDelegate<Post>(
-              animateTransitions: true,
-              itemBuilder: (context, post, index) => TextButton(
-                onPressed: () {
-                  SnackBar snackBar = SnackBar(
-                    content: Text('Ce pressionou o post ${post.title}'),
-                  );
+    final args =
+        ModalRoute.of(context)!.settings.arguments as CataloguePageArgs;
 
-                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                },
-                child: ListTile(
-                  leading: Text((post.date.toIso8601String()).split('T')[0]),
-                  title: Text(post.title),
-                ),
-              ),
-            ),
-            separatorBuilder: (context, index) => const Divider(),
-          ),
-        ));
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(args.post.title),
+      ),
+      body: Column(
+        children: [
+          _onFocusImage(args.post, args.indexOnFocus),
+          _imageRows(args.post),
+        ],
+      ),
+    );
   }
 
-  Future<void> _fetchPage(pageKey) async {
-    print('Get page $pageKey');
-    repository.page = pageKey;
-    final newItems = await repository.getPosts();
-    final isLastPage = newItems.length < _limit;
-    if (isLastPage) {
-      _pagingController.appendLastPage(newItems);
+  Widget _onFocusImage(Post post, int onFocus) {
+    if (onFocus > -1) {
+      return SizedBox(
+        width: double.infinity,
+        child: AspectRatio(
+          aspectRatio: 4 / 3,
+          child: ElevatedButton(
+            onPressed: () {},
+            child: AspectRatio(
+              aspectRatio: 1 / 1,
+              child: FancyShimmerImage(imageUrl: post.imageUrlList[onFocus]),
+            ),
+          ),
+        ),
+      );
     } else {
-      final nextPageKey = pageKey + newItems.length;
-      _pagingController.appendPage(newItems, nextPageKey);
+      return Container();
     }
+  }
+
+  Widget _imageRows(Post post) {
+    return Expanded(child: Container());
   }
 }

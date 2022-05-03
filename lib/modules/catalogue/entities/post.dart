@@ -17,6 +17,7 @@ class Post {
   }
 
   factory Post.fromMap(Map<String, dynamic> map) {
+    print(map);
     return Post(
       DateTime.parse(map['date']),
       map['title'] as String,
