@@ -22,19 +22,20 @@ class CataloguePage extends StatefulWidget {
 }
 
 class _CataloguePageState extends State<CataloguePage> {
+  CataloguePageArgs? _args;
+
   @override
   Widget build(BuildContext context) {
-    final args =
-        ModalRoute.of(context)!.settings.arguments as CataloguePageArgs;
+    _args ??= ModalRoute.of(context)!.settings.arguments as CataloguePageArgs;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(args.post.title),
+        title: Text(_args!.post.title),
       ),
       body: Column(
         children: [
-          _onFocusImage(args.post, args.indexOnFocus),
-          _imageRows(args.post),
+          _onFocusImage(_args!.post, _args!.indexOnFocus),
+          _imageRows(_args!.post),
         ],
       ),
     );
@@ -42,16 +43,20 @@ class _CataloguePageState extends State<CataloguePage> {
 
   Widget _onFocusImage(Post post, int onFocus) {
     if (onFocus > -1) {
-      return SizedBox(
-        width: double.infinity,
-        child: AspectRatio(
-          aspectRatio: 4 / 3,
-          child: ElevatedButton(
-            onPressed: () {},
-            child: AspectRatio(
-              aspectRatio: 1 / 1,
-              child: FancyShimmerImage(imageUrl: post.imageUrlList[onFocus]),
+      return Expanded(
+        flex: 2,
+        child: OutlinedButton(
+          style: ButtonStyle(
+            padding: MaterialStateProperty.all<EdgeInsets>(
+              EdgeInsets.zero,
             ),
+          ),
+          onPressed: () => setState(() {
+            _args!.indexOnFocus = -1;
+          }),
+          child: AspectRatio(
+            aspectRatio: 1 / 1,
+            child: FancyShimmerImage(imageUrl: post.imageUrlList[onFocus]),
           ),
         ),
       );
@@ -61,6 +66,39 @@ class _CataloguePageState extends State<CataloguePage> {
   }
 
   Widget _imageRows(Post post) {
-    return Expanded(child: Container());
+    return Expanded(
+      flex: 3,
+      child: ListView.builder(
+        itemCount: post.imageUrlList.length ~/ 3,
+        itemBuilder: (context, rowIndex) => AspectRatio(
+          aspectRatio: 3 / 1,
+          child: Row(
+            children: List<Expanded>.generate(
+              min(3, post.imageUrlList.length - rowIndex * 3),
+              (colIndex) {
+                int index = rowIndex * 3 + colIndex;
+                return Expanded(
+                  child: TextButton(
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all<EdgeInsets>(
+                        EdgeInsets.all(4),
+                      ),
+                    ),
+                    onPressed: () =>
+                        setState(() => _args!.indexOnFocus = index),
+                    child: AspectRatio(
+                      aspectRatio: 1 / 1,
+                      child: FancyShimmerImage(
+                        imageUrl: post.imageUrlList[index],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
