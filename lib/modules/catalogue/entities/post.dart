@@ -10,7 +10,7 @@ class Post {
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
-      'date': date.millisecondsSinceEpoch,
+      'date': date.toString(),
       'title': title,
       'imageUrlList': imageUrlList,
     };
