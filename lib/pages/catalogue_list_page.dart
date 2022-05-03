@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fancy_shimmer_image/fancy_shimmer_image.dart';
 import 'package:flutter/material.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
@@ -7,6 +9,7 @@ import 'package:kadosh/modules/catalogue/repositories/heroku.dart';
 import 'package:kadosh/modules/catalogue/repositories/repositories.dart';
 import 'package:kadosh/pages/catalogue_page.dart';
 import 'package:scroll_snap_list/scroll_snap_list.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CatalogueListPage extends StatefulWidget {
   const CatalogueListPage({Key? key}) : super(key: key);
@@ -26,6 +29,9 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
   final double imgBoxSize = 200.0;
   final double imgBoxPadd = 20;
 
+  final Future<SharedPreferences> _sharedPreferences =
+      SharedPreferences.getInstance();
+
   int _focusedIndex = 0;
 
   @override
@@ -37,17 +43,19 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
 
     _pagingController.addStatusListener((status) {
       if (status == PagingStatus.subsequentPageError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Something went wrong while fetching a new page.',
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Something went wrong while fetching a new page.',
+              ),
+              action: SnackBarAction(
+                label: 'Retry',
+                onPressed: () => _pagingController.retryLastFailedRequest(),
+              ),
             ),
-            action: SnackBarAction(
-              label: 'Retry',
-              onPressed: () => _pagingController.retryLastFailedRequest(),
-            ),
-          ),
-        );
+          );
       }
     });
 
@@ -58,9 +66,23 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("N.A KADOSH"),
-        backgroundColor: Colors.pink,
+        title: const Text(
+          "N.A KADOSH",
+          style: TextStyle(
+            color: Color(0xFF78066D),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color(0xFFFF1AE8),
         centerTitle: true,
+        leading: ClipOval(
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            color: const Color(0xFFD74294),
+            padding: const EdgeInsets.all(4.0),
+            child: Image.asset('images/favicon.png'),
+          ),
+        ),
       ),
       body: _cataloguePageBody,
       floatingActionButton: _floatingActionButton,
@@ -94,7 +116,8 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
       animateTransitions: true,
       itemBuilder: (context, post, index) => ElevatedButton(
         style: ButtonStyle(
-          backgroundColor: MaterialStateProperty.all<Color>(Color(0xFFFFFFFF)),
+          backgroundColor:
+              MaterialStateProperty.all<Color>(const Color(0xFFFFFFFF)),
         ),
         onPressed: () {
           SnackBar snackBar = SnackBar(
@@ -138,8 +161,8 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
             begin: Alignment.topCenter,
             end: Alignment.center,
             colors: [
-              Colors.pinkAccent,
-              Colors.white,
+              Color(0xFFFEBCF7),
+              Color(0xFFFFFFFF),
             ],
           ),
           borderRadius: BorderRadius.horizontal(
@@ -190,8 +213,8 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
         post.title,
         style: const TextStyle(
           fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: Colors.black,
+          fontWeight: FontWeight.normal,
+          color: Color(0xFF78066D),
         ),
       ),
     );
@@ -199,14 +222,33 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
 
   Future<void> _fetchPage(pageKey) async {
     repository.page = pageKey;
-    final newItems = await repository.getPosts();
+
+    List<Post> newItems = await _sharedPreferences.then((value) {
+          List stringsPosts =
+              json.decode(value.getString('page$pageKey') ?? '[]');
+          List<Post> posts = List<Post>.generate(
+            stringsPosts.length,
+            (index) => Post.fromMap(stringsPosts[index]),
+          );
+          return posts;
+        }) ??
+        await repository.getPosts();
     final isLastPage = newItems.length < _limit;
     if (isLastPage) {
       _pagingController.appendLastPage(newItems);
     } else {
-      final nextPageKey = pageKey + newItems.length;
+      final nextPageKey = ++pageKey;
       _pagingController.appendPage(newItems, nextPageKey);
     }
+    _sharedPreferences.then(
+      (shared) => shared.setString(
+        'page$pageKey',
+        List<String>.generate(
+          newItems.length,
+          (index) => newItems[index].toJson(),
+        ).toString(),
+      ),
+    );
   }
 
   void _onItemFocus(int index) => setState(() => _focusedIndex = index);
