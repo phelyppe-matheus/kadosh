@@ -29,12 +29,29 @@ class _CataloguePageState extends State<CataloguePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_args!.post.title),
-        backgroundColor: const Color(0xFFFEBCF7),
+        title: _postTitle(_args!.post),
+        centerTitle: true,
+        backgroundColor: const Color(0xFFFF1AE8),
+        leading: TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          style: ButtonStyle(
+            padding: MaterialStateProperty.all<EdgeInsets>(
+                const EdgeInsets.all(1.0)),
+          ),
+          child: ClipOval(
+            clipBehavior: Clip.antiAlias,
+            child: Container(
+              color: const Color(0xFFD74294),
+              padding: const EdgeInsets.all(4.0),
+              child: Image.asset('images/favicon.png'),
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
-          _postTitle(_args!.post),
           _onFocusImage(_args!.post, _args!.indexOnFocus),
           _imageRows(_args!.post),
         ],
@@ -103,7 +120,12 @@ class _CataloguePageState extends State<CataloguePage> {
     );
   }
 
-  _postTitle(Post post) {
-    return Text(post.title);
+  Widget _postTitle(Post post) {
+    return Text(
+      post.title,
+      style: const TextStyle(
+        color: Color(0xFF78066D),
+      ),
+    );
   }
 }
