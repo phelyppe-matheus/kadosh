@@ -63,19 +63,31 @@ class _CataloguePageState extends State<CataloguePage> {
     if (onFocus > -1) {
       return Expanded(
         flex: 2,
-        child: OutlinedButton(
-          style: ButtonStyle(
-            padding: MaterialStateProperty.all<EdgeInsets>(
-              EdgeInsets.zero,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 1,
+              child: TextButton(
+                style: ButtonStyle(
+                  padding: MaterialStateProperty.all<EdgeInsets>(
+                    EdgeInsets.zero,
+                  ),
+                ),
+                onPressed: () => setState(() {
+                  _args!.indexOnFocus = -1;
+                }),
+                child: AspectRatio(
+                  aspectRatio: 1 / 1,
+                  child:
+                      FancyShimmerImage(imageUrl: post.imageUrlList[onFocus]),
+                ),
+              ),
             ),
-          ),
-          onPressed: () => setState(() {
-            _args!.indexOnFocus = -1;
-          }),
-          child: AspectRatio(
-            aspectRatio: 1 / 1,
-            child: FancyShimmerImage(imageUrl: post.imageUrlList[onFocus]),
-          ),
+            Expanded(
+              flex: 2,
+              child: TextField(),
+            )
+          ],
         ),
       );
     } else {
