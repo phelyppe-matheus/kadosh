@@ -230,7 +230,7 @@ class _CatalogueListPageState extends State<CatalogueListPage> {
             stringsPosts.length,
             (index) => Post.fromMap(stringsPosts[index]),
           );
-          return posts;
+          return posts.isNotEmpty ? posts : null;
         }) ??
         await repository.getPosts();
     final isLastPage = newItems.length < _limit;
